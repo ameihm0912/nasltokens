@@ -1,0 +1,7 @@
+*.o
+*.swp
+*.nasl
+grammar.output
+grammar.tab.[c|h]
+lex.yy.c
+nasltokens
