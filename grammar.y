@@ -13,6 +13,7 @@ void		proc_isdpkgvuln(void);
 void		proc_isrpmvuln(void);
 void		proc_scripttag(void);
 void		reset_fargs(void);
+void		rpm_translate(char *, char *, char **);
 void		add_farg(char *, char *);
 
 void
@@ -73,7 +74,43 @@ proc_isdpkgvuln()
 	}
 	pkgname = ps.fargs[0].val;
 	resver = ps.fargs[1].val;
-	printf("%s %s < %s\n", ps.release_cond_arg, pkgname, resver);
+	printf("%s|%s|<|%s\n", ps.release_cond_arg, pkgname, resver);
+}
+
+/*
+ * Reformat the arguments to isrpmvuln() to make it more directly
+ * usable.
+ */
+void
+rpm_translate(char *rel, char *pkgname, char **resver)
+{
+	char *bufcpy, *p0;
+	size_t buflen;
+
+	if (strncasecmp(rel, "\"RHENT_", 7) != 0) {
+		return;
+	}
+	if (strlen(*resver) < strlen(pkgname)) {
+		fprintf(stderr, "error: malformed resver/pkgname in rpm_translate\n");
+		exit(2);
+	}
+	buflen = strlen(*resver) + 1;
+	bufcpy = malloc(buflen);
+	if (bufcpy == NULL) {
+		perror("malloc");
+		exit(2);
+	}
+	memset(bufcpy, 0, buflen);
+	bufcpy[0] = '"';
+	p0 = *resver + strlen(pkgname);
+	memcpy(bufcpy + 1, p0, strlen(p0));
+	strncpy(*resver, bufcpy, buflen - 1);
+	free(bufcpy);
+
+	for (p0 = *resver; *p0 != '\0'; p0++) {
+		if (*p0 == '~')
+			*p0 = '-';
+	}
 }
 
 void
@@ -87,7 +124,8 @@ proc_isrpmvuln()
 	}
 	pkgname = ps.fargs[0].val;
 	resver = ps.fargs[1].val;
-	printf("%s %s < %s\n", ps.release_cond_arg, pkgname, resver);
+	rpm_translate(ps.release_cond_arg, pkgname, &resver);
+	printf("%s|%s|<|%s\n", ps.release_cond_arg, pkgname, resver);
 }
 
 void
