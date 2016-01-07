@@ -41,16 +41,14 @@ nparse(char *fp)
 		exit(2);
 	}
 	yyin = f;
-	printf("{\n    \"vulnerabilities\": [\n");
 	yyparse();
-	printf("\n    ]\n}\n");
 	fclose(f);
 }
 
 void
 usage()
 {
-	printf("usage: nasltokens [-dh] file.nasl\n");
+	printf("usage: nasltokens [-dh] file.nasl file.nasl ...\n");
 	exit(1);
 }
 
@@ -59,6 +57,7 @@ main(int argc, char *argv[])
 {
 	char ch;
 	char *fp;
+	int i;
 
 	while ((ch = getopt(argc, argv, "dh")) != -1) {
 		switch (ch) {
@@ -72,13 +71,17 @@ main(int argc, char *argv[])
 	}
 	argc -= optind;
 	argv += optind;
-	if (argc != 1) {
+	if (argc < 1) {
 		usage();
 	}
-	fp = argv[0];
 
-	memset(&ps, 0, sizeof(ps));
-	nparse(fp);
+	printf("{\n    \"vulnerabilities\": [\n");
+	for (i = 0; i < argc; i++) {
+		fp = argv[i];
+		memset(&ps, 0, sizeof(ps));
+		nparse(fp);
+	}
+	printf("\n    ]\n}\n");
 
 	return (0);
 }
