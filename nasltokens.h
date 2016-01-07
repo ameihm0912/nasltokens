@@ -6,6 +6,8 @@ struct parserstate {
 	/* Conditional release entry state */
 	int		release_cond_flag;
 	char		release_cond_arg[1024];
+	char		release_cond_trans[1024];
+	char		release_os[1024];
 	int		release_entry_level;
 
 	char		funcname[1024];

@@ -5,9 +5,26 @@
 #include <unistd.h>
 #include "nasltokens.h"
 
+struct s_relcondtab {
+	char *naslid;
+	char *scribeid;
+	char *os;
+} relcondtab[] = {
+	{ "UBUNTU15.10", "wily", "ubuntu" },
+	{ "UBUNTU15.04", "vivid", "ubuntu" },
+	{ "UBUNTU14.10", "utopic", "ubuntu" },
+	{ "UBUNTU14.04 LTS", "trusty", "ubuntu" },
+	{ "UBUNTU12.04 LTS", "precise", "ubuntu" },
+	{ "UBUNTU10.04", "lucid", "ubuntu" },
+	{ "RHENT_7", "rhel7", "redhat" },
+	{ "RHENT_6", "rhel6", "redhat" },
+	{ "", "", "" }
+};
+
 extern void		yyerror(const char *);
 extern int		yylex(void);
 
+char		*reltrans(char *);
 void		parser_handler(void);
 void		proc_isdpkgvuln(void);
 void		proc_isrpmvuln(void);
@@ -16,6 +33,9 @@ void		reset_fargs(void);
 void		rpm_translate(char *, char *, char **);
 void		add_farg(char *, char *);
 
+/*
+ * Reset function arguments in the parser state
+ */
 void
 reset_fargs()
 {
@@ -26,9 +46,14 @@ reset_fargs()
 	ps.fargs = NULL;
 }
 
+/*
+ * Add a function argument for the current function stored within the parser
+ * state
+ */
 void
 add_farg(char *key, char *value)
 {
+	char *p1;
 	struct funcargs *p0;
 
 	ps.nfargs++;
@@ -38,6 +63,15 @@ add_farg(char *key, char *value)
 		exit(2);
 	}
 	p0 = &ps.fargs[ps.nfargs - 1];
+
+	/* If a value begins and ends in a quote character, strip the quotes
+	 * from the value */
+	for (p1 = value; *p1 == '"'; p1++);
+	value = p1;
+	if (p1[strlen(p1) - 1] == '"') {
+		p1[strlen(p1) - 1] = '\0';
+	}
+
 	memset(p0, 0, sizeof(struct funcargs));
 	if (key != NULL)
 		strncpy(p0->key, key, sizeof(p0->key) - 1);
@@ -45,6 +79,9 @@ add_farg(char *key, char *value)
 		strncpy(p0->val, value, sizeof(p0->val) - 1);
 }
 
+/*
+ * Interpret the parser state and handle the stored function
+ */
 void
 parser_handler()
 {
@@ -53,13 +90,49 @@ parser_handler()
 	if (ps.funcname[0] != '\0') {
 		if (debug)
 			fprintf(stderr, "function: %s\n", ps.funcname);
-		if (strcmp(ps.funcname, "scripttag") == 0) {
+		if (strcmp(ps.funcname, "script_tag") == 0) {
 			proc_scripttag();
 		} else if (strcmp(ps.funcname, "isdpkgvuln") == 0) {
 			proc_isdpkgvuln();
 		} else if (strcmp(ps.funcname, "isrpmvuln") == 0) {
 			proc_isrpmvuln();
 		}
+	}
+}
+
+/*
+ * Translate the release name used in the NASL file into a release identifier
+ * that is used by scribe; the parser state is updated
+ */
+void
+release_cond_trans()
+{
+	char tmpbuf[1024];
+	struct s_relcondtab *sptr;
+
+	/* First update the existing stored release string and remove any
+	 * leading or trailing quote characters */
+	if (ps.release_cond_arg[0] == '"' && strlen(ps.release_cond_arg) > 1) {
+		strncpy(tmpbuf, ps.release_cond_arg + 1, sizeof(tmpbuf) - 1);
+		tmpbuf[strlen(tmpbuf) - 1] = '\0';
+		strncpy(ps.release_cond_arg, tmpbuf, sizeof(ps.release_cond_arg) - 1);
+	}
+
+	memset(ps.release_os, 0, sizeof(ps.release_os));
+	memset(ps.release_cond_trans, 0, sizeof(ps.release_cond_trans));
+
+	for (sptr = relcondtab; strlen(sptr->naslid) != 0; sptr++) {
+		if (strcmp(sptr->naslid, ps.release_cond_arg) == 0) {
+			strncpy(ps.release_cond_trans, sptr->scribeid,
+			    sizeof(ps.release_cond_trans) - 1);
+			strncpy(ps.release_os, sptr->os,
+			    sizeof(ps.release_os) - 1);
+			break;
+		}
+	}
+	if (strlen(ps.release_os) == 0) {
+		fprintf(stderr, "WARNING: unknown release identifier \"%s\"\n",
+		    ps.release_cond_arg);
 	}
 }
 
@@ -74,12 +147,14 @@ proc_isdpkgvuln()
 	}
 	pkgname = ps.fargs[0].val;
 	resver = ps.fargs[1].val;
-	printf("%s|%s|<|%s\n", ps.release_cond_arg, pkgname, resver);
+	printf("%s|%s|<|%s\n", ps.release_cond_trans, pkgname, resver);
 }
 
 /*
  * Reformat the arguments to isrpmvuln() to make it more directly
- * usable.
+ * usable. The package version strings contain the package name in this
+ * case. It is removed, in addition ~ strings are converted to - for
+ * version string comparison.
  */
 void
 rpm_translate(char *rel, char *pkgname, char **resver)
@@ -87,7 +162,7 @@ rpm_translate(char *rel, char *pkgname, char **resver)
 	char *bufcpy, *p0;
 	size_t buflen;
 
-	if (strncasecmp(rel, "\"RHENT_", 7) != 0) {
+	if (strncasecmp(rel, "rhel", 4) != 0) {
 		return;
 	}
 	if (strlen(*resver) < strlen(pkgname)) {
@@ -101,12 +176,17 @@ rpm_translate(char *rel, char *pkgname, char **resver)
 		exit(2);
 	}
 	memset(bufcpy, 0, buflen);
-	bufcpy[0] = '"';
 	p0 = *resver + strlen(pkgname);
-	memcpy(bufcpy + 1, p0, strlen(p0));
-	strncpy(*resver, bufcpy, buflen - 1);
+	if (*p0 != '~' || strlen(p0) < 2) {
+		fprintf(stderr, "error: malformed rpm version string\n");
+		exit(2);
+	}
+	p0++; /* Skip the ~ seperator between the pkg name and version string */
+	strncpy(bufcpy, p0, buflen - 1);
+	strncpy(*resver, bufcpy, buflen);
 	free(bufcpy);
 
+	/* Finally, convert all the ~ in the version string to a - */
 	for (p0 = *resver; *p0 != '\0'; p0++) {
 		if (*p0 == '~')
 			*p0 = '-';
@@ -124,8 +204,8 @@ proc_isrpmvuln()
 	}
 	pkgname = ps.fargs[0].val;
 	resver = ps.fargs[1].val;
-	rpm_translate(ps.release_cond_arg, pkgname, &resver);
-	printf("%s|%s|<|%s\n", ps.release_cond_arg, pkgname, resver);
+	rpm_translate(ps.release_cond_trans, pkgname, &resver);
+	printf("%s|%s|<|%s\n", ps.release_cond_trans, pkgname, resver);
 }
 
 void
@@ -138,11 +218,11 @@ proc_scripttag()
 	p0 = &ps.fargs[0];
 
 	if ((strcmp(p0->key, "name") != 0) ||
-	    (strcmp(p0->val, "\"check_type\"") != 0))
+	    (strcmp(p0->val, "check_type") != 0))
 		return;
 
 	p0 = &ps.fargs[1];
-	if (strcmp(p0->val, "\"authenticated package test\"") != 0) {
+	if (strcmp(p0->val, "authenticated package test") != 0) {
 		fprintf(stderr, "exiting, plugin is not an authenticated package test\n");
 		exit(3);
 	}
@@ -189,6 +269,7 @@ statement:
 		parser_handler();
 		reset_fargs();
 		ps.funcname[0] = '\0';
+		free($1);
 	}
 	| IDENTIFIER EQUALS IDENTIFIER OPENPA funcargs CLOSEPA SEMICOLON
 	{
@@ -197,6 +278,8 @@ statement:
 		parser_handler();
 		reset_fargs();
 		ps.funcname[0] = '\0';
+		free($1);
+		free($3);
 	}
 	| IDENTIFIER EQUALS IDENTIFIER OPENPA funcargs CLOSEPA
 	{
@@ -205,9 +288,19 @@ statement:
 		parser_handler();
 		reset_fargs();
 		ps.funcname[0] = '\0';
+		free($1);
+		free($3);
 	}
 	| IDENTIFIER EQUALS ARGVAL SEMICOLON
+	{
+		free($1);
+		free($3);
+	}
 	| IDENTIFIER PLUS EQUALS IDENTIFIER SEMICOLON
+	{
+		free($1);
+		free($4);
+	}
 
 if_state:
 	IF
@@ -225,7 +318,10 @@ condition:
 				    ps.release_entry_level);
 			strncpy(ps.release_cond_arg,
 			    $3, sizeof(ps.release_cond_arg) - 1);
+			release_cond_trans();
 		}
+		free($1);
+		free($3);
 	}
 	| IDENTIFIER evaluator ARGVAL
 	{
@@ -237,10 +333,19 @@ condition:
 				    ps.release_entry_level);
 			strncpy(ps.release_cond_arg,
 			    $3, sizeof(ps.release_cond_arg) - 1);
+			release_cond_trans();
 		}
+		free($1);
+		free($3);
 	}
 	| IDENTIFIER evaluator NULLTOK
+	{
+		free($1);
+	}
 	| OPENPA statement CLOSEPA evaluator ARGVAL
+	{
+		free($5);
+	}
 	| OPENPA statement CLOSEPA evaluator NULLTOK
 	;
 
@@ -258,16 +363,22 @@ funcarg:
 	IDENTIFIER COLON ARGVAL
 	{
 		add_farg($1, $3);
+		free($1);
+		free($3);
 	}
 	| IDENTIFIER COLON IDENTIFIER
 	{
 		add_farg($1, $3);
+		free($1);
+		free($3);
 	}
 	| ARGVAL
 	{
 		add_farg(NULL, $1);
+		free($1);
 	}
 	| IDENTIFIER
 	{
 		add_farg(NULL, $1);
+		free($1);
 	}
