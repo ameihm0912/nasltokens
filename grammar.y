@@ -32,9 +32,11 @@ void		parser_handler(void);
 void		proc_isdpkgvuln(void);
 void		proc_isrpmvuln(void);
 void		proc_scripttag(void);
+void		proc_scriptcveid(void);
 void		reset_fargs(void);
 void		rpm_translate(char *, char *, char **);
 void		add_farg(char *, char *);
+void		printmeta(void);
 
 /*
  * Reset function arguments in the parser state
@@ -95,6 +97,8 @@ parser_handler()
 			fprintf(stderr, "function: %s\n", ps.funcname);
 		if (strcmp(ps.funcname, "script_tag") == 0) {
 			proc_scripttag();
+		} else if (strcmp(ps.funcname, "script_cve_id") == 0) {
+			proc_scriptcveid();
 		} else if (strcmp(ps.funcname, "isdpkgvuln") == 0) {
 			proc_isdpkgvuln();
 		} else if (strcmp(ps.funcname, "isrpmvuln") == 0) {
@@ -157,7 +161,8 @@ proc_isdpkgvuln()
 	printf("            \"os\": \"%s\",\n", ps.release_os);
 	printf("            \"release\": \"%s\",\n", ps.release_cond_trans);
 	printf("            \"package\": \"%s\",\n", pkgname);
-	printf("            \"version\": \"%s\"\n", resver);
+	printf("            \"version\": \"%s\",\n", resver);
+	printmeta();
 	printf("        }");
 	inlist = 1;
 }
@@ -225,7 +230,8 @@ proc_isrpmvuln()
 	printf("            \"os\": \"%s\",\n", ps.release_os);
 	printf("            \"release\": \"%s\",\n", ps.release_cond_trans);
 	printf("            \"package\": \"%s\",\n", pkgname);
-	printf("            \"version\": \"%s\"\n", resver);
+	printf("            \"version\": \"%s\",\n", resver);
+	printmeta();
 	printf("        }");
 	inlist = 1;
 }
@@ -250,6 +256,42 @@ proc_scripttag()
 	}
 }
 
+void
+proc_scriptcveid()
+{
+	struct funcargs *p0;
+	int i;
+
+	if (ps.nfargs < 1)
+		return;
+
+	for (i = 0; i < ps.nfargs; i++) {
+		p0 = &ps.fargs[i];
+		strncpy(ps.cvelist[ps.cvelist_num], p0->val,
+		    sizeof(ps.cvelist[ps.cvelist_num]));
+		ps.cvelist_num++;
+	}
+}
+
+void
+printmeta()
+{
+	int i;
+
+	printf("            \"metadata\": {\n");
+
+	for (i = 0; i < ps.cvelist_num; i++) {
+		if (i == 0)
+			printf("                \"cve\": [\n");
+		else
+			printf(",\n");
+		printf("                    \"%s\"", ps.cvelist[i]);
+	}
+	if (i > 0)
+		printf("\n                ]\n");
+
+	printf("            }\n");
+}
 
 %}
 

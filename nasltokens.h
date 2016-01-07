@@ -1,3 +1,5 @@
+#define MAX_CVES 64
+
 /* Parser state */
 struct parserstate {
 	/* Parser context level */
@@ -9,6 +11,10 @@ struct parserstate {
 	char		release_cond_trans[1024];
 	char		release_os[1024];
 	int		release_entry_level;
+
+	/* Script CVE information */
+	char		cvelist[MAX_CVES][1024];
+	int		cvelist_num;
 
 	char		funcname[1024];
 	struct funcargs	*fargs;
