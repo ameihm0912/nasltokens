@@ -41,7 +41,9 @@ nparse(char *fp)
 		exit(2);
 	}
 	yyin = f;
+	printf("{\n    \"vulnerabilities\": [\n");
 	yyparse();
+	printf("\n    ]\n}\n");
 	fclose(f);
 }
 

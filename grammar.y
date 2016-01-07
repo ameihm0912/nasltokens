@@ -21,6 +21,8 @@ struct s_relcondtab {
 	{ "", "", "" }
 };
 
+static int inlist;
+
 extern void		yyerror(const char *);
 extern int		yylex(void);
 
@@ -147,7 +149,16 @@ proc_isdpkgvuln()
 	}
 	pkgname = ps.fargs[0].val;
 	resver = ps.fargs[1].val;
-	printf("%s|%s|<|%s\n", ps.release_cond_trans, pkgname, resver);
+	if (inlist) {
+		printf(",\n");
+	}
+	printf("        {\n");
+	printf("            \"os\": \"%s\",\n", ps.release_os);
+	printf("            \"release\": \"%s\",\n", ps.release_cond_trans);
+	printf("            \"package\": \"%s\",\n", pkgname);
+	printf("            \"version\": \"%s\"\n", resver);
+	printf("        }");
+	inlist = 1;
 }
 
 /*
@@ -205,7 +216,16 @@ proc_isrpmvuln()
 	pkgname = ps.fargs[0].val;
 	resver = ps.fargs[1].val;
 	rpm_translate(ps.release_cond_trans, pkgname, &resver);
-	printf("%s|%s|<|%s\n", ps.release_cond_trans, pkgname, resver);
+	if (inlist) {
+		printf(",\n");
+	}
+	printf("        {\n");
+	printf("            \"os\": \"%s\",\n", ps.release_os);
+	printf("            \"release\": \"%s\",\n", ps.release_cond_trans);
+	printf("            \"package\": \"%s\",\n", pkgname);
+	printf("            \"version\": \"%s\"\n", resver);
+	printf("        }");
+	inlist = 1;
 }
 
 void
