@@ -28,38 +28,39 @@ cc -o nasltokens main.o grammar.tab.o lex.yy.o
             "os": "redhat",
             "release": "rhel6",
             "package": "httpd",
-            "version": "2.2.15-47.el6_7"
+            "version": "2.2.15-47.el6_7",
+            "metadata": {
+                "description": "RedHat Update for httpd RHSA-2015:1668-01",
+                "cvss": "5.0",
+                "cve": [
+                    "CVE-2015-3183"
+                ]
+            }
         },
         {
             "os": "redhat",
             "release": "rhel6",
             "package": "httpd-debuginfo",
-            "version": "2.2.15-47.el6_7"
+            "version": "2.2.15-47.el6_7",
+            "metadata": {
+                "description": "RedHat Update for httpd RHSA-2015:1668-01",
+                "cvss": "5.0",
+                "cve": [
+                    "CVE-2015-3183"
+                ]
+            }
         },
         {
             "os": "redhat",
             "release": "rhel6",
             "package": "httpd-devel",
-            "version": "2.2.15-47.el6_7"
+            "version": "2.2.15-47.el6_7",
+            "metadata": {
+                "description": "RedHat Update for httpd RHSA-2015:1668-01",
+                "cvss": "5.0",
+                "cve": [
+                    "CVE-2015-3183"
+                ]
+            }
         },
-        {
-            "os": "redhat",
-            "release": "rhel6",
-            "package": "httpd-tools",
-            "version": "2.2.15-47.el6_7"
-        },
-        {
-            "os": "redhat",
-            "release": "rhel6",
-            "package": "mod_ssl",
-            "version": "2.2.15-47.el6_7"
-        },
-        {
-            "os": "redhat",
-            "release": "rhel6",
-            "package": "httpd-manual",
-            "version": "2.2.15-47.el6_7"
-        }
-    ]
-}
-```
+	...
