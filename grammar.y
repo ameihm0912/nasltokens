@@ -376,7 +376,7 @@ statement:
 		free($1);
 		free($3);
 	}
-	| IDENTIFIER EQUALS ARGVAL SEMICOLON
+	| IDENTIFIER EQUALS ARGVAL appendops SEMICOLON
 	{
 		free($1);
 		free($3);
@@ -385,6 +385,19 @@ statement:
 	{
 		free($1);
 		free($4);
+	}
+
+appendops:
+	 | appendops appendop
+
+appendop:
+	PLUS IDENTIFIER
+	{
+		free($2);
+	}
+	| PLUS ARGVAL
+	{
+		free($2);
 	}
 
 if_state:
