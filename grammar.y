@@ -18,6 +18,7 @@ struct s_relcondtab {
 	{ "UBUNTU10.04", "lucid", "ubuntu" },
 	{ "RHENT_7", "rhel7", "redhat" },
 	{ "RHENT_6", "rhel6", "redhat" },
+	{ "RHENT_5", "rhel5", "redhat" },
 	{ "", "", "" }
 };
 
@@ -188,11 +189,12 @@ rpm_translate(char *rel, char *pkgname, char **resver)
 	}
 	memset(bufcpy, 0, buflen);
 	p0 = *resver + strlen(pkgname);
-	if (*p0 != '~' || strlen(p0) < 2) {
-		fprintf(stderr, "error: malformed rpm version string\n");
+	if ((*p0 != '~' && *p0 != '-') || strlen(p0) < 2) {
+		fprintf(stderr, "error: malformed rpm version string: \"%s\", " \
+		    "package \"%s\"\n", *resver, pkgname);
 		exit(2);
 	}
-	p0++; /* Skip the ~ seperator between the pkg name and version string */
+	p0++; /* Skip the ~/- seperator between the pkg name and version string */
 	strncpy(bufcpy, p0, buflen - 1);
 	strncpy(*resver, bufcpy, buflen);
 	free(bufcpy);
