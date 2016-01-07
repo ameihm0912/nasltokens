@@ -15,7 +15,7 @@ struct s_relcondtab {
 	{ "UBUNTU14.10", "utopic", "ubuntu" },
 	{ "UBUNTU14.04 LTS", "trusty", "ubuntu" },
 	{ "UBUNTU12.04 LTS", "precise", "ubuntu" },
-	{ "UBUNTU10.04", "lucid", "ubuntu" },
+	{ "UBUNTU10.04 LTS", "lucid", "ubuntu" },
 	{ "RHENT_7", "rhel7", "redhat" },
 	{ "RHENT_6", "rhel6", "redhat" },
 	{ "RHENT_5", "rhel5", "redhat" },
@@ -299,17 +299,19 @@ printmeta()
 	printf("            \"metadata\": {\n");
 
 	printf("                \"description\": \"%s\",\n", ps.script_name);
-	printf("                \"cvss\": \"%s\",\n", ps.cvss);
+	printf("                \"cvss\": \"%s\"", ps.cvss);
 
 	for (i = 0; i < ps.cvelist_num; i++) {
 		if (i == 0)
-			printf("                \"cve\": [\n");
+			printf(",\n                \"cve\": [\n");
 		else
 			printf(",\n");
 		printf("                    \"%s\"", ps.cvelist[i]);
 	}
 	if (i > 0)
 		printf("\n                ]\n");
+	else
+		printf("\n");
 
 	printf("            }\n");
 }
