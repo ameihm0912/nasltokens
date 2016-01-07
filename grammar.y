@@ -32,6 +32,7 @@ void		parser_handler(void);
 void		proc_isdpkgvuln(void);
 void		proc_isrpmvuln(void);
 void		proc_scripttag(void);
+void		proc_scriptname(void);
 void		proc_scriptcveid(void);
 void		reset_fargs(void);
 void		rpm_translate(char *, char *, char **);
@@ -97,6 +98,8 @@ parser_handler()
 			fprintf(stderr, "function: %s\n", ps.funcname);
 		if (strcmp(ps.funcname, "script_tag") == 0) {
 			proc_scripttag();
+		} else if (strcmp(ps.funcname, "script_name") == 0) {
+			proc_scriptname();
 		} else if (strcmp(ps.funcname, "script_cve_id") == 0) {
 			proc_scriptcveid();
 		} else if (strcmp(ps.funcname, "isdpkgvuln") == 0) {
@@ -257,6 +260,17 @@ proc_scripttag()
 }
 
 void
+proc_scriptname()
+{
+	struct funcargs *p0;
+
+	if (ps.nfargs < 1)
+		return;
+	p0 = &ps.fargs[0];
+	strncpy(ps.script_name, p0->val, sizeof(ps.script_name) - 1);
+}
+
+void
 proc_scriptcveid()
 {
 	struct funcargs *p0;
@@ -268,7 +282,7 @@ proc_scriptcveid()
 	for (i = 0; i < ps.nfargs; i++) {
 		p0 = &ps.fargs[i];
 		strncpy(ps.cvelist[ps.cvelist_num], p0->val,
-		    sizeof(ps.cvelist[ps.cvelist_num]));
+		    sizeof(ps.cvelist[ps.cvelist_num]) - 1);
 		ps.cvelist_num++;
 	}
 }
@@ -279,6 +293,8 @@ printmeta()
 	int i;
 
 	printf("            \"metadata\": {\n");
+
+	printf("                \"description\": \"%s\",\n", ps.script_name);
 
 	for (i = 0; i < ps.cvelist_num; i++) {
 		if (i == 0)

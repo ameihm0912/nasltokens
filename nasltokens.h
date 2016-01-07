@@ -12,6 +12,9 @@ struct parserstate {
 	char		release_os[1024];
 	int		release_entry_level;
 
+	/* General script information */
+	char		script_name[1024];
+
 	/* Script CVE information */
 	char		cvelist[MAX_CVES][1024];
 	int		cvelist_num;
