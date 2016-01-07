@@ -18,6 +18,7 @@ struct parserstate {
 	/* Script CVE information */
 	char		cvelist[MAX_CVES][1024];
 	int		cvelist_num;
+	char		cvss[64];
 
 	char		funcname[1024];
 	struct funcargs	*fargs;

@@ -248,14 +248,18 @@ proc_scripttag()
 		return;
 	p0 = &ps.fargs[0];
 
-	if ((strcmp(p0->key, "name") != 0) ||
-	    (strcmp(p0->val, "check_type") != 0))
-		return;
-
-	p0 = &ps.fargs[1];
-	if (strcmp(p0->val, "authenticated package test") != 0) {
-		fprintf(stderr, "exiting, plugin is not an authenticated package test\n");
-		exit(3);
+	if ((strcmp(p0->key, "name") == 0) &&
+	    (strcmp(p0->val, "check_type") == 0)) {
+		p0 = &ps.fargs[1];
+		if (strcmp(p0->val, "authenticated package test") != 0) {
+			fprintf(stderr, "exiting, plugin is not an " \
+			    "authenticated package test\n");
+			exit(3);
+		}
+	} else if ((strcmp(p0->key, "name") == 0) &&
+	    (strcmp(p0->val, "cvss_base") == 0)) {
+		p0 = &ps.fargs[1];
+		strncpy(ps.cvss, p0->val, sizeof(ps.cvss) - 1);
 	}
 }
 
@@ -295,6 +299,7 @@ printmeta()
 	printf("            \"metadata\": {\n");
 
 	printf("                \"description\": \"%s\",\n", ps.script_name);
+	printf("                \"cvss\": \"%s\",\n", ps.cvss);
 
 	for (i = 0; i < ps.cvelist_num; i++) {
 		if (i == 0)
