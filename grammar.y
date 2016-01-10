@@ -19,6 +19,7 @@ struct s_relcondtab {
 	{ "RHENT_7", "rhel7", "redhat" },
 	{ "RHENT_6", "rhel6", "redhat" },
 	{ "RHENT_5", "rhel5", "redhat" },
+	{ "AMAZON", "amazon", "amazon" },
 	{ "", "", "" }
 };
 
@@ -182,7 +183,8 @@ rpm_translate(char *rel, char *pkgname, char **resver)
 	char *bufcpy, *p0;
 	size_t buflen;
 
-	if (strncasecmp(rel, "rhel", 4) != 0) {
+	if ((strncasecmp(rel, "rhel", 4) != 0) &&
+	    (strncasecmp(rel, "amazon", 6) != 0)) {
 		return;
 	}
 	if (strlen(*resver) < strlen(pkgname)) {
