@@ -20,6 +20,9 @@ struct s_relcondtab {
 	{ "RHENT_6", "rhel6", "redhat" },
 	{ "RHENT_5", "rhel5", "redhat" },
 	{ "AMAZON", "amazon", "amazon" },
+	{ "CentOS5", "centos5", "centos" },
+	{ "CentOS6", "centos6", "centos" },
+	{ "CentOS7", "centos7", "centos" },
 	{ "", "", "" }
 };
 
@@ -36,7 +39,7 @@ void		proc_scripttag(void);
 void		proc_scriptname(void);
 void		proc_scriptcveid(void);
 void		reset_fargs(void);
-void		rpm_translate(char *, char *, char **);
+int		rpm_translate(char *, char *, char **);
 void		add_farg(char *, char *);
 void		printmeta(void);
 
@@ -177,19 +180,20 @@ proc_isdpkgvuln()
  * case. It is removed, in addition ~ strings are converted to - for
  * version string comparison.
  */
-void
+int
 rpm_translate(char *rel, char *pkgname, char **resver)
 {
 	char *bufcpy, *p0;
 	size_t buflen;
 
 	if ((strncasecmp(rel, "rhel", 4) != 0) &&
-	    (strncasecmp(rel, "amazon", 6) != 0)) {
-		return;
+	    (strncasecmp(rel, "amazon", 6) != 0) &&
+	    (strncasecmp(rel, "centos", 6) != 0)) {
+		return (0);
 	}
 	if (strlen(*resver) < strlen(pkgname)) {
-		fprintf(stderr, "error: malformed resver/pkgname in rpm_translate\n");
-		exit(2);
+		fprintf(stderr, "WARNING: malformed resver/pkgname in rpm_translate\n");
+		return (-1);
 	}
 	buflen = strlen(*resver) + 1;
 	bufcpy = malloc(buflen);
@@ -200,9 +204,9 @@ rpm_translate(char *rel, char *pkgname, char **resver)
 	memset(bufcpy, 0, buflen);
 	p0 = *resver + strlen(pkgname);
 	if ((*p0 != '~' && *p0 != '-') || strlen(p0) < 2) {
-		fprintf(stderr, "error: malformed rpm version string: \"%s\", " \
+		fprintf(stderr, "WARNING: malformed rpm version string: \"%s\", " \
 		    "package \"%s\"\n", *resver, pkgname);
-		exit(2);
+		return (-1);
 	}
 	p0++; /* Skip the ~/- seperator between the pkg name and version string */
 	strncpy(bufcpy, p0, buflen - 1);
@@ -214,6 +218,7 @@ rpm_translate(char *rel, char *pkgname, char **resver)
 		if (*p0 == '~')
 			*p0 = '-';
 	}
+	return (0);
 }
 
 void
@@ -227,7 +232,8 @@ proc_isrpmvuln()
 	}
 	pkgname = ps.fargs[0].val;
 	resver = ps.fargs[1].val;
-	rpm_translate(ps.release_cond_trans, pkgname, &resver);
+	if (rpm_translate(ps.release_cond_trans, pkgname, &resver) == -1)
+		return;
 	if (inlist) {
 		printf(",\n");
 	}
