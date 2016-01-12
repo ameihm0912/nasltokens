@@ -8,7 +8,7 @@
 
 %option nounput
 
-identifierch	[A-Za-z0-9_]
+identifierch	[A-Za-z0-9._]
 identifierstr	{identifierch}+
 poundcomment	\#.*\n
 

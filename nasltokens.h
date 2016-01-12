@@ -14,6 +14,7 @@ struct parserstate {
 
 	/* General script information */
 	char		script_name[1024];
+	char		script_oid[1024];
 
 	/* Script CVE information */
 	char		cvelist[MAX_CVES][1024];

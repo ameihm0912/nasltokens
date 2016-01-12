@@ -38,10 +38,12 @@ void		proc_isrpmvuln(void);
 void		proc_scripttag(void);
 void		proc_scriptname(void);
 void		proc_scriptcveid(void);
+void		proc_scriptoid(void);
 void		reset_fargs(void);
 int		rpm_translate(char *, char *, char **);
 void		add_farg(char *, char *);
 void		printmeta(void);
+void		chkoid(void);
 
 /*
  * Reset function arguments in the parser state
@@ -90,6 +92,18 @@ add_farg(char *key, char *value)
 }
 
 /*
+ * Validate the OID value is set in the parser state, exit if not
+ */
+void
+chkoid()
+{
+	if (strlen(ps.script_oid) == 0) {
+		fprintf(stderr, "error: unable to obtain script id or oid\n");
+		exit(1);
+	}
+}
+
+/*
  * Interpret the parser state and handle the stored function
  */
 void
@@ -106,6 +120,10 @@ parser_handler()
 			proc_scriptname();
 		} else if (strcmp(ps.funcname, "script_cve_id") == 0) {
 			proc_scriptcveid();
+		} else if (strcmp(ps.funcname, "script_oid") == 0) {
+			proc_scriptoid();
+		} else if (strcmp(ps.funcname, "script_id") == 0) {
+			proc_scriptoid();
 		} else if (strcmp(ps.funcname, "isdpkgvuln") == 0) {
 			proc_isdpkgvuln();
 		} else if (strcmp(ps.funcname, "isrpmvuln") == 0) {
@@ -164,9 +182,11 @@ proc_isdpkgvuln()
 	if (inlist) {
 		printf(",\n");
 	}
+	chkoid();
 	printf("        {\n");
 	printf("            \"os\": \"%s\",\n", ps.release_os);
 	printf("            \"release\": \"%s\",\n", ps.release_cond_trans);
+	printf("            \"id\": \"%s\",\n", ps.script_oid);
 	printf("            \"package\": \"%s\",\n", pkgname);
 	printf("            \"version\": \"%s\",\n", resver);
 	printmeta();
@@ -237,9 +257,11 @@ proc_isrpmvuln()
 	if (inlist) {
 		printf(",\n");
 	}
+	chkoid();
 	printf("        {\n");
 	printf("            \"os\": \"%s\",\n", ps.release_os);
 	printf("            \"release\": \"%s\",\n", ps.release_cond_trans);
+	printf("            \"id\": \"%s\",\n", ps.script_oid);
 	printf("            \"package\": \"%s\",\n", pkgname);
 	printf("            \"version\": \"%s\",\n", resver);
 	printmeta();
@@ -269,6 +291,17 @@ proc_scripttag()
 		p0 = &ps.fargs[1];
 		strncpy(ps.cvss, p0->val, sizeof(ps.cvss) - 1);
 	}
+}
+
+void
+proc_scriptoid()
+{
+	struct funcargs *p0;
+
+	if (ps.nfargs < 1)
+		return;
+	p0 = &ps.fargs[0];
+	snprintf(ps.script_oid, sizeof(ps.script_oid), "nasl-%s", p0->val);
 }
 
 void
