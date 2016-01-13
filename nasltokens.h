@@ -1,5 +1,7 @@
 #define MAX_CVES 64
 
+#define OUTPUT_CATEGORY "nasl"
+
 /* Parser state */
 struct parserstate {
 	/* Parser context level */

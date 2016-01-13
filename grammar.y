@@ -340,6 +340,7 @@ printmeta()
 	printf("            \"metadata\": {\n");
 
 	printf("                \"description\": \"%s\",\n", ps.script_name);
+	printf("                \"category\": \"%s\",\n", OUTPUT_CATEGORY);
 	printf("                \"cvss\": \"%s\"", ps.cvss);
 
 	for (i = 0; i < ps.cvelist_num; i++) {
